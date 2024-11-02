@@ -1,0 +1,461 @@
+.gitignore
+coinflip.py
+    --- Start of coinflip.py ---
+    import random
+    
+    def flip_coin():
+        return random.choice(['heads', 'tails'])
+    
+    if flip_coin() == 'tails':
+        print ("The coin landed on TAILS.")
+    else:
+        print ("The coin landed on HEADS.")
+    --- End of coinflip.py ---
+create_tree.py
+    --- Start of create_tree.py ---
+    import os
+    import sys
+    
+    # List of directories to ignore
+    IGNORE_DIRS = {
+        '__pycache__',
+        '.git',
+        'node_modules',
+        'venv',
+        'env',
+        '.venv',
+        'build',
+        'dist',
+        'logs',
+        '.pytest_cache',
+        '.mypy_cache',
+        '.tox',
+        '.idea',
+        '.vscode',
+        '.DS_Store',
+        '*.egg-info',
+        'npm-debug.log',
+        'yarn-error.log',
+        '.hg',
+        '.svn'
+    }
+    
+    def generate_file_tree(directory, level=0):
+        file_tree = ""
+        indent = "    " * level
+        with os.scandir(directory) as it:
+            for entry in it:
+                if entry.is_dir():
+                    # Check if the directory is in the ignore list
+                    if entry.name in IGNORE_DIRS:
+                        continue
+                    file_tree += f"{indent}[{entry.name}]/\n"
+                    file_tree += generate_file_tree(entry.path, level + 1)
+                else:
+                    file_tree += f"{indent}{entry.name}\n"
+        return file_tree
+    
+    def create_file_tree_txt(directory):
+        file_tree = generate_file_tree(directory)
+        file_name = os.path.join(directory, "file_tree.txt")
+        with open(file_name, "w") as file:
+            file.write(file_tree)
+    
+    if __name__ == "__main__":
+        # Determine the directory where the .exe or .py file is located
+        if getattr(sys, 'frozen', False):
+            current_directory = os.path.dirname(sys.executable)  # For .exe
+        else:
+            current_directory = os.path.dirname(os.path.abspath(__file__))  # For regular .py execution
+    
+        create_file_tree_txt(current_directory)
+        print(f"File tree created and saved as 'file_tree.txt' in {current_directory}")
+    --- End of create_tree.py ---
+create_tree_and_get_contents.py
+    --- Start of create_tree_and_get_contents.py ---
+    import os
+    import sys
+    
+    # List of directories to ignore
+    IGNORE_DIRS = {
+        '__pycache__',
+        '.git',
+        'node_modules',
+        'venv',
+        'env',
+        '.venv',
+        'build',
+        'dist',
+        'logs',
+        '.pytest_cache',
+        '.mypy_cache',
+        '.tox',
+        '.idea',
+        '.vscode',
+        '.DS_Store',
+        '*.egg-info',
+        'npm-debug.log',
+        'yarn-error.log',
+        '.hg',
+        '.svn'
+    }
+    
+    def generate_file_tree(directory, level=0, code_extensions=None, exclude_extensions=None):
+        """
+        Recursively generates a file tree string for the given directory.
+        Includes contents of code files based on specified extensions.
+    
+        Args:
+            directory (str): The directory path to scan.
+            level (int): Current depth level for indentation.
+            code_extensions (set): Set of file extensions considered as code files.
+            exclude_extensions (set): Set of file extensions to exclude.
+    
+        Returns:
+            str: The formatted file tree with optional file contents.
+        """
+        if code_extensions is None:
+            code_extensions = {
+                '.py', '.js', '.java', '.c', '.cpp', '.cs', '.html', '.css',
+                '.rb', '.go', '.php', '.swift', '.kt', '.ts', '.json', '.xml',
+                '.yaml', '.yml', '.sql', '.sh', '.bash', '.zsh', '.ini', '.md'
+            }
+        if exclude_extensions is None:
+            exclude_extensions = {
+                '.pyc', '.pyo', '.class', '.o', '.exe', '.dll', '.so', '.dylib'
+            }
+    
+        file_tree = ""
+        indent = "    " * level
+    
+        try:
+            with os.scandir(directory) as it:
+                for entry in sorted(it, key=lambda e: e.name.lower()):
+                    if entry.is_dir():
+                        # Skip ignored directories
+                        if entry.name in IGNORE_DIRS:
+                            continue
+                        file_tree += f"{indent}[{entry.name}]/\n"
+                        file_tree += generate_file_tree(entry.path, level + 1, code_extensions, exclude_extensions)
+                    else:
+                        _, ext = os.path.splitext(entry.name)
+                        ext = ext.lower()
+                        
+                        # Skip excluded file types
+                        if ext in exclude_extensions:
+                            continue
+    
+                        file_tree += f"{indent}{entry.name}\n"
+    
+                        # If the file is a code file, include its contents
+                        if ext in code_extensions:
+                            try:
+                                with open(entry.path, 'r', encoding='utf-8') as f:
+                                    content = f.read()
+                                
+                                # Prepare the content with proper indentation
+                                content_lines = content.splitlines()
+                                indented_content = '\n'.join([f"{indent}    {line}" for line in content_lines])
+                                
+                                # Append the content to the file tree
+                                file_tree += f"{indent}    --- Start of {entry.name} ---\n"
+                                file_tree += f"{indented_content}\n"
+                                file_tree += f"{indent}    --- End of {entry.name} ---\n"
+                            except Exception as e:
+                                file_tree += f"{indent}    [Could not read file: {e}]\n"
+        except PermissionError as pe:
+            file_tree += f"{indent}[Permission Denied: {pe}]\n"
+        except Exception as e:
+            file_tree += f"{indent}[Error: {e}]\n"
+    
+        return file_tree
+    
+    def create_file_tree_txt(directory):
+        """
+        Creates a 'file_tree_with_code_contents.txt' in the specified directory containing the file tree
+        and contents of code files.
+    
+        Args:
+            directory (str): The directory path where the file tree will be created.
+        """
+        print(f"Generating file tree for directory: {directory}")
+        file_tree = generate_file_tree(directory)
+        file_name = os.path.join(directory, "file_tree_with_code_contents.txt")
+        
+        try:
+            with open(file_name, "w", encoding='utf-8') as file:
+                file.write(file_tree)
+            print(f"File tree successfully created and saved as 'file_tree_with_code_contents.txt' in {directory}")
+        except Exception as e:
+            print(f"Failed to write file_tree_with_code_contents.txt: {e}")
+    
+    if __name__ == "__main__":
+        # Determine the directory where the .exe or .py file is located
+        if getattr(sys, 'frozen', False):
+            # If the script is run as a bundled executable (e.g., PyInstaller )
+            current_directory = os.path.dirname(sys.executable)
+        else:
+            # If the script is run as a standard .py file
+            current_directory = os.path.dirname(os.path.abspath(__file__))
+    
+        create_file_tree_txt(current_directory)
+    --- End of create_tree_and_get_contents.py ---
+create_tree_and_get_contents.spec
+README.md
+    --- Start of README.md ---
+    # L-s-Byte-sized-projects
+    A repository for little trinkets and random projects I make during my free time.
+    --- End of README.md ---
+russianroulette.py
+    --- Start of russianroulette.py ---
+    import random
+    
+    def russian_roulette():
+        # Define the revolver's chamber size
+        chamber_size = 6
+    
+        # Ask user how many bullets they want to load
+        while True:
+            try:
+                bullets = int(input(f"How many bullets do you want to load? (1-{chamber_size}): "))
+                if 1 <= bullets <= chamber_size:
+                    break
+                else:
+                    print(f"Please enter a number between 1 and {chamber_size}.")
+            except ValueError:
+                print("Invalid input. Please enter a number.")
+    
+        # Create the revolver chamber and load the bullets
+        chamber = [0] * chamber_size
+        bullet_positions = random.sample(range(chamber_size), bullets)
+        for pos in bullet_positions:
+            chamber[pos] = 1
+    
+        # Spin the chamber
+        random.shuffle(chamber)
+    
+        # Pull the trigger
+        print("Spinning the chamber and pulling the trigger...")
+        if chamber[0] == 1:
+            print("Bang! You lost.")
+            if bullets == 6:
+                print("I don't know what you expected, given that you loaded 6 bullets...")
+        else:
+            print("Click! You win.")
+    
+    russian_roulette()
+    --- End of russianroulette.py ---
+suboptimal_helloworld.py
+    --- Start of suboptimal_helloworld.py ---
+    """
+    I asked ChatGPT to give me a REALLY suboptimal way to make a "Hello World" program. This is the result.
+    """
+    import sys
+    import time
+    import threading
+    import multiprocessing
+    from functools import reduce
+    import random
+    import math
+    
+    # Unnecessary global variables
+    GLOBAL_CONSTANT = 42
+    LARGE_PRIME = 15485863
+    
+    def compute_pi(n_terms):
+        """Compute Pi using the Leibniz formula (extremely inefficient for large n_terms)."""
+        pi_over_4 = 0.0
+        for k in range(n_terms):
+            pi_over_4 += ((-1)**k) / (2*k + 1)
+        return pi_over_4 * 4
+    
+    def fibonacci(n):
+        """Compute the nth Fibonacci number recursively (inefficient)."""
+        if n <= 1:
+            return n
+        else:
+            return fibonacci(n-1) + fibonacci(n-2)
+    
+    def is_prime(n):
+        """Check if a number is prime (inefficient for large n)."""
+        if n <= 1:
+            return False
+        if n <= 3:
+            return True
+        if n % 2 == 0 or n % 3 == 0:
+            return False
+        i = 5
+        while i * i <= n:
+            if n % i == 0 or n % (i + 2) == 0:
+                return False
+            i += 6
+        return True
+    
+    def generate_large_list(size):
+        """Generate a large list of random numbers."""
+        return [random.randint(1, 100) for _ in range(size)]
+    
+    def sort_large_list(large_list):
+        """Sort a large list using bubble sort (inefficient)."""
+        n = len(large_list)
+        for i in range(n):
+            for j in range(0, n - i - 1):
+                if large_list[j] > large_list[j + 1]:
+                    large_list[j], large_list[j + 1] = large_list[j + 1], large_list[j]
+        return large_list
+    
+    def unnecessary_threading():
+        """Create unnecessary threads."""
+        def worker():
+            time.sleep(1)
+        threads = []
+        for _ in range(10):
+            t = threading.Thread(target=worker)
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+    
+    def worker():
+        """Worker function for multiprocessing."""
+        time.sleep(1)
+    
+    def unnecessary_multiprocessing():
+        """Create unnecessary processes."""
+        processes = []
+        for _ in range(5):
+            p = multiprocessing.Process(target=worker)
+            p.start()
+            processes.append(p)
+        for p in processes:
+            p.join()
+    
+    def calculate_factorial(n):
+        """Calculate factorial using reduce (inefficient for large n)."""
+        return reduce(lambda x, y: x * y, range(1, n + 1), 1)
+    
+    def main():
+        # Perform unnecessary computations
+        pi = compute_pi(1000000)
+        fib_number = fibonacci(30)
+        prime_check = is_prime(LARGE_PRIME)
+        large_list = generate_large_list(1000)
+        sorted_list = sort_large_list(large_list)
+        unnecessary_threading()
+        unnecessary_multiprocessing()
+        factorial_result = calculate_factorial(1000)
+    
+        # Build "Hello, World!" character by character using corrected ASCII codes
+        chars = [
+            chr(int(math.sqrt(5184))),             # 'H' (sqrt(5184) = 72)
+            chr(int(math.ceil(math.e * 37))),      # 'e' (ceil(e * 37) = 101)
+            chr(int(2 ** 7 - 20)),                 # 'l' (128 - 20 = 108)
+            chr(int(2 ** 7 - 20)),                 # 'l'
+            chr(int(math.sqrt(12321))),            # 'o' (sqrt(12321) = 111)
+            chr(int(2 ** 5)),                      # ' ' (2^5 = 32)
+            chr(int(174 / 2)),                     # 'W' (174 / 2 = 87)
+            chr(int(math.sqrt(12321))),            # 'o'
+            chr(int(3 * 38)),                      # 'r' (3 * 38 = 114)
+            chr(int(2 ** 7 - 20)),                 # 'l'
+            chr(int(10 ** 2 / 1))                  # 'd' (100 / 1 = 100)
+        ]
+        message = ''.join(chars)
+    
+        # Print the message
+        sys.stdout.write(message + '\n')
+    
+    if __name__ == "__main__":
+        main()
+    --- End of suboptimal_helloworld.py ---
+tree.py
+    --- Start of tree.py ---
+    import itertools
+    
+    def generate_all_trees(labels, max_nodes):
+        # Generates all rooted trees with up to max_nodes nodes, labeled with the given labels
+        # Each tree is represented as a tuple: (label, [list of child trees])
+        if max_nodes == 0:
+            return [None]
+        trees = []
+        for nodes in range(1, max_nodes + 1):
+            if nodes == 1:
+                for label in labels:
+                    trees.append((label, []))
+            else:
+                for label in labels:
+                    for partition in partitions(nodes - 1):
+                        child_combinations = [generate_all_trees(labels, size) for size in partition]
+                        for children in itertools.product(*child_combinations):
+                            trees.append((label, list(children)))
+        return trees
+    
+    def partitions(n, I=1):
+        # Generates all integer partitions of n (order matters)
+        yield (n,)
+        for i in range(I, n//2 + 1):
+            for p in partitions(n - i, i):
+                yield (i,) + p
+    
+    def is_homeomorphic_embedding(t1, t2):
+        # Checks whether tree t1 is homeomorphically embeddable into tree t2
+        if t1 is None:
+            return True
+        if t2 is None:
+            return False
+        if t1[0] != t2[0]:
+            return False
+        t1_children = t1[1]
+        t2_children = t2[1]
+        if len(t1_children) > len(t2_children):
+            return False
+        # Check if there's an injective mapping from t1's children to t2's children
+        for child_indices in itertools.combinations(range(len(t2_children)), len(t1_children)):
+            if all(is_homeomorphic_embedding(c1, t2_children[i]) for c1, i in zip(t1_children, child_indices)):
+                return True
+        return False
+    
+    def generate_sequence(n):
+        labels = [str(i) for i in range(1, n+1)]
+        max_nodes = n  # Just define n during demonstration
+        all_trees = generate_all_trees(labels, max_nodes)
+        print(f"Generated {len(all_trees)} trees with up to {max_nodes} nodes and {n} labels.")
+        # Sort trees for consistent ordering
+        all_trees.sort(key=lambda x: tree_to_string(x))
+        # Attempt to build the longest possible sequence
+        max_sequence = []
+        def build_sequence(sequence, remaining_trees):
+            nonlocal max_sequence
+            if len(sequence) > len(max_sequence):
+                max_sequence = sequence.copy()
+            for i, tree in enumerate(remaining_trees):
+                embeddable = False
+                for prev_tree in sequence:
+                    if is_homeomorphic_embedding(prev_tree, tree):
+                        embeddable = True
+                        break
+                if not embeddable:
+                    sequence.append(tree)
+                    build_sequence(sequence, remaining_trees[:i] + remaining_trees[i+1:])
+                    sequence.pop()
+        build_sequence([], all_trees)
+        return max_sequence
+    
+    def tree_to_string(tree):
+        # Converts a tree to a string representation for sorting and display.
+        if tree is None:
+            return ''
+        label, children = tree
+        return f"{label}({','.join(tree_to_string(child) for child in children)})"
+    
+    # Enter a number to make a tree (i.e. 1 is TREE(1), 3 is TREE(3), etc.). Has a check for if n is an integer
+    while True:
+        try:
+            n = int(input("Enter a number for your tree: "))
+            sequence = generate_sequence(n)
+            print(f"\nValid sequence length for TREE({n}): {len(sequence)}")
+            for idx, tree in enumerate(sequence):
+                print(f"Tree {idx + 1}: {tree_to_string(tree)}")
+            break
+        except ValueError:
+            print("Enter an integer, GOOFY.")
+    --- End of tree.py ---
