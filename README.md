@@ -1,2 +1,2 @@
 # L-s-Byte-sized-projects
-A repository for little trinkets and random projects I make during my free time.
+A repository for random things I make during my free time.

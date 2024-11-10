@@ -25,25 +25,28 @@ IGNORE_DIRS = {
     '.svn'
 }
 
-def generate_file_tree(directory, level=0):
+def generate_file_tree(directory, prefix=""):
     file_tree = ""
-    indent = "    " * level
-    with os.scandir(directory) as it:
-        for entry in it:
-            if entry.is_dir():
-                # Check if the directory is in the ignore list
-                if entry.name in IGNORE_DIRS:
-                    continue
-                file_tree += f"{indent}[{entry.name}]/\n"
-                file_tree += generate_file_tree(entry.path, level + 1)
-            else:
-                file_tree += f"{indent}{entry.name}\n"
+    entries = list(os.scandir(directory))
+    entries = [entry for entry in entries if entry.name not in IGNORE_DIRS]
+    entry_count = len(entries)
+    
+    for i, entry in enumerate(entries):
+        connector = "├── " if i < entry_count - 1 else "└── "
+        
+        if entry.is_dir():
+            file_tree += f"{prefix}{connector}[{entry.name}]/\n"
+            extension = "│   " if i < entry_count - 1 else "    "
+            file_tree += generate_file_tree(entry.path, prefix + extension)
+        else:
+            file_tree += f"{prefix}{connector}{entry.name}\n"
+    
     return file_tree
 
 def create_file_tree_txt(directory):
     file_tree = generate_file_tree(directory)
     file_name = os.path.join(directory, "file_tree.txt")
-    with open(file_name, "w") as file:
+    with open(file_name, "w", encoding="utf-8") as file:
         file.write(file_tree)
 
 if __name__ == "__main__":

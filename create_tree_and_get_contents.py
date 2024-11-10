@@ -25,14 +25,14 @@ IGNORE_DIRS = {
     '.svn'
 }
 
-def generate_file_tree(directory, level=0, code_extensions=None, exclude_extensions=None):
+def generate_file_tree(directory, prefix="", code_extensions=None, exclude_extensions=None):
     """
     Recursively generates a file tree string for the given directory.
     Includes contents of code files based on specified extensions.
 
     Args:
         directory (str): The directory path to scan.
-        level (int): Current depth level for indentation.
+        prefix (str): Current prefix for indentation.
         code_extensions (set): Set of file extensions considered as code files.
         exclude_extensions (set): Set of file extensions to exclude.
 
@@ -51,47 +51,43 @@ def generate_file_tree(directory, level=0, code_extensions=None, exclude_extensi
         }
 
     file_tree = ""
-    indent = "    " * level
+    entries = list(os.scandir(directory))
+    entries = [entry for entry in entries if entry.name not in IGNORE_DIRS]
+    entry_count = len(entries)
 
-    try:
-        with os.scandir(directory) as it:
-            for entry in sorted(it, key=lambda e: e.name.lower()):
-                if entry.is_dir():
-                    # Skip ignored directories
-                    if entry.name in IGNORE_DIRS:
-                        continue
-                    file_tree += f"{indent}[{entry.name}]/\n"
-                    file_tree += generate_file_tree(entry.path, level + 1, code_extensions, exclude_extensions)
-                else:
-                    _, ext = os.path.splitext(entry.name)
-                    ext = ext.lower()
-                    
-                    # Skip excluded file types
-                    if ext in exclude_extensions:
-                        continue
+    for i, entry in enumerate(entries):
+        connector = "├── " if i < entry_count - 1 else "└── "
 
-                    file_tree += f"{indent}{entry.name}\n"
+        if entry.is_dir():
+            file_tree += f"{prefix}{connector}[{entry.name}]/\n"
+            extension = "│   " if i < entry_count - 1 else "    "
+            file_tree += generate_file_tree(entry.path, prefix + extension, code_extensions, exclude_extensions)
+        else:
+            _, ext = os.path.splitext(entry.name)
+            ext = ext.lower()
 
-                    # If the file is a code file, include its contents
-                    if ext in code_extensions:
-                        try:
-                            with open(entry.path, 'r', encoding='utf-8') as f:
-                                content = f.read()
-                            
-                            # Prepare the content with proper indentation
-                            content_lines = content.splitlines()
-                            indented_content = '\n'.join([f"{indent}    {line}" for line in content_lines])
-                            
-                            # Append the content to the file tree
-                            file_tree += f"{indent}    --- Start of {entry.name} ---\n"
-                            file_tree += f"{indented_content}\n"
-                            file_tree += f"{indent}    --- End of {entry.name} ---\n"
-                        except Exception as e:
-                            file_tree += f"{indent}    [Could not read file: {e}]\n"
-    except PermissionError as pe:
-        file_tree += f"{indent}[Permission Denied: {pe}]\n"
-    except Exception as e:
-        file_tree += f"{indent}[Error: {e}]\n"
+            # Skip excluded file types
+            if ext in exclude_extensions:
+                continue
+
+            file_tree += f"{prefix}{connector}{entry.name}\n"
+
+            # If the file is a code file, include its contents
+            if ext in code_extensions:
+                try:
+                    with open(entry.path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+
+                    # Prepare the content with proper indentation
+                    content_lines = content.splitlines()
+                    indented_content = '\n'.join([f"{prefix}    {line}" for line in content_lines])
+
+                    # Append the content to the file tree
+                    file_tree += f"{prefix}    --- Start of {entry.name} ---\n"
+                    file_tree += f"{indented_content}\n"
+                    file_tree += f"{prefix}    --- End of {entry.name} ---\n"
+                except Exception as e:
+                    file_tree += f"{prefix}    [Could not read file: {e}]\n"
 
     return file_tree
 
