@@ -25,7 +25,7 @@ IGNORE_DIRS = {
     '.svn'
 }
 
-def generate_file_tree(directory, prefix="", code_extensions=None, exclude_extensions=None):
+def generate_file_tree(directory, prefix="", code_extensions=None, exclude_extensions=None, ignore_files=None):
     """
     Recursively generates a file tree string for the given directory.
     Includes contents of code files based on specified extensions.
@@ -35,6 +35,7 @@ def generate_file_tree(directory, prefix="", code_extensions=None, exclude_exten
         prefix (str): Current prefix for indentation.
         code_extensions (set): Set of file extensions considered as code files.
         exclude_extensions (set): Set of file extensions to exclude.
+        ignore_files (set): Specific filenames to ignore.
 
     Returns:
         str: The formatted file tree with optional file contents.
@@ -43,16 +44,19 @@ def generate_file_tree(directory, prefix="", code_extensions=None, exclude_exten
         code_extensions = {
             '.py', '.js', '.java', '.c', '.cpp', '.cs', '.html', '.css',
             '.rb', '.go', '.php', '.swift', '.kt', '.ts', '.json', '.xml',
-            '.yaml', '.yml', '.sql', '.sh', '.bash', '.zsh', '.ini', '.md'
+            '.yaml', '.yml', '.sql', '.sh', '.bash', '.zsh', '.ini', '.md',
+            '.vue'
         }
     if exclude_extensions is None:
         exclude_extensions = {
             '.pyc', '.pyo', '.class', '.o', '.exe', '.dll', '.so', '.dylib'
         }
+    if ignore_files is None:
+        ignore_files = set()
 
     file_tree = ""
     entries = list(os.scandir(directory))
-    entries = [entry for entry in entries if entry.name not in IGNORE_DIRS]
+    entries = [entry for entry in entries if entry.name not in IGNORE_DIRS and entry.name not in ignore_files]
     entry_count = len(entries)
 
     for i, entry in enumerate(entries):
@@ -61,7 +65,7 @@ def generate_file_tree(directory, prefix="", code_extensions=None, exclude_exten
         if entry.is_dir():
             file_tree += f"{prefix}{connector}[{entry.name}]/\n"
             extension = "│   " if i < entry_count - 1 else "    "
-            file_tree += generate_file_tree(entry.path, prefix + extension, code_extensions, exclude_extensions)
+            file_tree += generate_file_tree(entry.path, prefix + extension, code_extensions, exclude_extensions, ignore_files)
         else:
             _, ext = os.path.splitext(entry.name)
             ext = ext.lower()
@@ -100,7 +104,12 @@ def create_file_tree_txt(directory):
         directory (str): The directory path where the file tree will be created.
     """
     print(f"Generating file tree for directory: {directory}")
-    file_tree = generate_file_tree(directory)
+    
+    # Dynamically determine filenames to ignore
+    script_name = os.path.basename(__file__)
+    ignore_files = {script_name, "file_tree_with_code_contents.txt", "create_tree.py", "file_tree.txt", "create_tree_and_get_contents.exe", "create_tree.exe"}
+    
+    file_tree = generate_file_tree(directory, ignore_files=ignore_files)
     file_name = os.path.join(directory, "file_tree_with_code_contents.txt")
     
     try:

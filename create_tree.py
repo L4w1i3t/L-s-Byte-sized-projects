@@ -1,7 +1,7 @@
 import os
 import sys
 
-# List of directories to ignore
+# List of directories and files to ignore
 IGNORE_DIRS = {
     '__pycache__',
     '.git',
@@ -25,10 +25,22 @@ IGNORE_DIRS = {
     '.svn'
 }
 
+IGNORE_FILES = {
+    'create_tree.py',
+    'file_tree.txt',
+    'create_tree_and_get_contents.py',
+    'file_tree_with_code_contents.txt',
+    'create_tree_and_get_contents.exe',
+    'create_tree.exe'
+}
+
 def generate_file_tree(directory, prefix=""):
     file_tree = ""
     entries = list(os.scandir(directory))
-    entries = [entry for entry in entries if entry.name not in IGNORE_DIRS]
+    entries = [
+        entry for entry in entries
+        if entry.name not in IGNORE_DIRS and entry.name not in IGNORE_FILES
+    ]
     entry_count = len(entries)
     
     for i, entry in enumerate(entries):
@@ -55,6 +67,10 @@ if __name__ == "__main__":
         current_directory = os.path.dirname(sys.executable)  # For .exe
     else:
         current_directory = os.path.dirname(os.path.abspath(__file__))  # For regular .py execution
-
+    
+    # Dynamically add this script's filename to the ignore list
+    script_name = os.path.basename(__file__)
+    IGNORE_FILES.add(script_name)
+    
     create_file_tree_txt(current_directory)
     print(f"File tree created and saved as 'file_tree.txt' in {current_directory}")
