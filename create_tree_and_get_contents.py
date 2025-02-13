@@ -52,7 +52,14 @@ def generate_file_tree(directory, prefix="", code_extensions=None, exclude_exten
             '.pyc', '.pyo', '.class', '.o', '.exe', '.dll', '.so', '.dylib'
         }
     if ignore_files is None:
-        ignore_files = set()
+        ignore_files = {}
+
+    # Check for treeignore.txt and read its contents
+    treeignore_path = os.path.join(directory, 'treeignore.txt')
+    if os.path.exists(treeignore_path):
+        with open(treeignore_path, 'r', encoding='utf-8') as f:
+            ignored_entries = f.read().splitlines()
+            ignore_files.update(ignored_entries)
 
     file_tree = ""
     entries = list(os.scandir(directory))
@@ -85,7 +92,6 @@ def generate_file_tree(directory, prefix="", code_extensions=None, exclude_exten
                     # Prepare the content with proper indentation
                     content_lines = content.splitlines()
                     indented_content = '\n'.join([f"{prefix}    {line}" for line in content_lines])
-
                     # Append the content to the file tree
                     file_tree += f"{prefix}    --- Start of {entry.name} ---\n"
                     file_tree += f"{indented_content}\n"
