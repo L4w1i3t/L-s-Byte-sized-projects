@@ -1,0 +1,22 @@
+{
+  "name": "pace-calculator",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron .",
+    "dev": "set NODE_ENV=development && npm start",
+    "obfuscate-assets": "javascript-obfuscator assets/js --output assets/js-obfuscated",
+    "obfuscate-root": "javascript-obfuscator . --output obfuscated --exclude node_modules",
+    "package-linux": "electron-packager . PACECALC --platform=linux --arch=x64 --out=release-builds --overwrite --icon=assets/gui/favicon.ico",
+    "package-macos": "electron-packager . PACECALC --platform=darwin --arch=x64 --out=release-builds --overwrite --icon=assets/gui/favicon.icns",
+    "package-win32": "electron-packager . PACECALC --platform=win32 --arch=ia32 --out=release-builds --overwrite --icon=assets/gui/favicon.ico",
+    "package-win64": "electron-packager . PACECALC --platform=win32 --arch=x64 --out=release-builds --overwrite --icon=assets/gui/favicon.ico"
+  },
+  "devDependencies": {
+    "electron": "^26.6.10"
+  },
+  "dependencies": {
+    "tailwindcss": "^4.0.6"
+  }
+}

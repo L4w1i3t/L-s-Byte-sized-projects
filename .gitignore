@@ -4,3 +4,5 @@ create_tree_and_get_contents.exe
 file_tree.txt
 dist/
 build/
+node_modules/
+release-builds/
