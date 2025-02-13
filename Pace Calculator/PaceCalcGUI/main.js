@@ -8,6 +8,8 @@ function createWindow() {
     autoHideMenuBar: true,
     // window cant be resized
     resizable: false,
+    // favicon
+    icon: path.join(__dirname, 'assets/icons/gui/favicon.ico'),
     webPreferences: {
       nodeIntegration: true, // for simplicity
       contextIsolation: false
